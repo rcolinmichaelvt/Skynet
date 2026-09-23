@@ -1,106 +1,404 @@
-<<<<<<< HEAD
-# Skynet — Internship Finder (CLI)
+# Internship Finder
 
-A command-line tool that pulls internship listings and ranks them against
-**weighted (1–10) keyword filters** — major/field, specialization, company
-type, and location — instead of the binary yes/no filters most job boards
-give you.
+A command-line internship search tool that collects internship listings and filters them through a customizable **funnel-style filtering system**.
 
-## Why not scrape LinkedIn directly?
+Instead of assigning scores or rankings, each filter progressively narrows the pool of internships. Results can then be browsed through paginated terminal output with clickable application links.
 
-LinkedIn actively blocks scrapers and it's against their Terms of Service —
-building on top of it would break quickly and isn't something worth
-building a class project around. Instead, this pulls from
-[SimplifyJobs/Summer2027-Internships](https://github.com/SimplifyJobs/Summer2027-Internships),
-a public JSON dataset that's community-maintained, updated daily, and
-*meant* to be fetched programmatically (no login, no scraping, no ToS
-issue). Right now it's strongest for software/data/quant/hardware roles —
-it likely won't have great mining-engineering coverage yet. The fix is to
-add more sources (see below), not to scrape LinkedIn.
+## Features
 
-## Setup
+* 🔎 Search and collect internship listings
+* 🎯 Funnel-style filtering
+* ✅ Require **all** included keywords to match
+* ❌ Exclude listings containing **any** excluded keyword
+* 📍 Location-specific filtering
+* 🏢 Company/industry keyword filtering
+* 🎓 Major-related keyword filtering
+* 🔤 Custom include/exclude keyword filtering
+* 📄 Paginated results
+* ⌨️ Keyboard navigation between result pages
+* 🔗 Full clickable application URLs
+* 🖥️ Clean terminal interface
+* 🧹 Clears the terminal when switching pages
+
+---
+
+## Filtering System
+
+Internships are processed through filters sequentially.
+
+Each filter receives the results from the previous filter and removes listings that don't satisfy its rules.
+
+```text
+All Listings
+     │
+     ▼
+ Major Filter
+     │
+     ▼
+ Company Type Filter
+     │
+     ▼
+ Location Filter
+     │
+     ▼
+ Include / Exclude Filter
+     │
+     ▼
+ Final Results
+```
+
+### Include Keywords
+
+Include keywords use **AND logic**.
+
+For example:
+
+```text
+the, walt, disney, company
+```
+
+A listing must contain **all four keywords** to survive the filter:
+
+```text
+the       ✓
+walt      ✓
+disney    ✓
+company   ✓
+```
+
+A listing containing only:
+
+```text
+walt disney company
+```
+
+would not pass because it is missing `the`.
+
+### Exclude Keywords
+
+Exclude keywords use **OR logic**.
+
+For example:
+
+```text
+senior, manager, director
+```
+
+A listing is removed if it contains **any one** of those keywords.
+
+```text
+"Software Engineer"           → ✓ Keep
+"Senior Software Engineer"    → ✗ Remove
+"Engineering Manager"         → ✗ Remove
+"Director of Engineering"     → ✗ Remove
+```
+
+This allows you to require multiple characteristics while easily removing unwanted positions.
+
+---
+
+## Example
+
+Suppose you enter:
+
+```text
+Include:
+the, walt, disney, company
+
+Exclude:
+senior, manager
+```
+
+A listing such as:
+
+```text
+Software Engineering Intern
+The Walt Disney Company
+```
+
+passes the filter.
+
+A listing such as:
+
+```text
+Senior Software Engineering Intern
+The Walt Disney Company
+```
+
+is removed because it contains `senior`.
+
+---
+
+## Pagination
+
+Results are displayed in pages based on the supplied `limit`.
+
+For example:
+
+```js
+await displayResults(pool, appliedFilterLabels, 10);
+```
+
+If there are 47 results, the program displays:
+
+```text
+Page 1 of 5
+
+1. Software Engineering Intern
+   Company — Location
+   https://...
+
+...
+
+10. Software Engineering Intern
+    Company — Location
+    https://...
+```
+
+Use the keyboard to navigate:
+
+```text
+n = next page
+p = previous page
+q = quit
+```
+
+The terminal is cleared whenever the page changes.
+
+---
+
+## Application Links
+
+Application URLs are displayed as complete URLs rather than being placed inside a fixed-width table.
+
+Example:
+
+```text
+1. Software Engineering Intern
+   Disney — Orlando, FL
+   https://example.com/jobs/software-engineering-intern
+```
+
+This allows supported terminals to recognize the URL as a clickable link.
+
+---
+
+## Project Structure
+
+```text
+src/
+├── display.js
+├── filters.js
+└── ...
+```
+
+### `display.js`
+
+Responsible for:
+
+* Displaying applied filters
+* Displaying internship results
+* Pagination
+* Keyboard navigation
+* Terminal clearing
+* Application URLs
+
+### `filters.js`
+
+Contains the filtering logic:
+
+* Keyword parsing
+* Include matching
+* Exclude matching
+* Major filtering
+* Company type filtering
+* Location filtering
+* Custom include/exclude filtering
+
+---
+
+## Filtering API
+
+### `applyKeywordFilter()`
+
+Generic keyword filter used by the other filter functions.
+
+```js
+applyKeywordFilter(pool, {
+  include: [],
+  exclude: [],
+  field: "tags"
+});
+```
+
+Positive keywords must **all** match:
+
+```js
+include.every(...)
+```
+
+Negative keywords require only **one** match to exclude a listing:
+
+```js
+exclude.some(...)
+```
+
+### `applyMajorFilter()`
+
+Filters based on major-related keywords.
+
+```js
+applyMajorFilter(pool, "computer science, software engineering");
+```
+
+### `applyCompanyTypeFilter()`
+
+Filters based on company or industry keywords.
+
+```js
+applyCompanyTypeFilter(pool, "technology, software");
+```
+
+### `applyLocationFilter()`
+
+Filters against the listing's location.
+
+```js
+applyLocationFilter(pool, "remote, virginia");
+```
+
+### `applyPlusMinusFilter()`
+
+Provides free-form include/exclude filtering.
+
+```js
+applyPlusMinusFilter(
+  pool,
+  "software, engineering, intern",
+  "senior, manager"
+);
+```
+
+The above requires **all three** positive keywords while excluding listings containing **either** `senior` or `manager`.
+
+---
+
+## Keyword Format
+
+Multiple keywords are entered as comma-separated values:
+
+```text
+software, engineering, intern
+```
+
+Keywords are automatically:
+
+* Trimmed
+* Converted to lowercase
+* Empty values removed
+
+Matching is currently performed using substring matching.
+
+For example:
+
+```text
+engineer
+```
+
+can match:
+
+```text
+software engineer
+engineering
+engineered
+```
+
+---
+
+## Installation
+
+Clone the repository and install dependencies:
 
 ```bash
 npm install
+```
+
+Then run the application using the project's configured npm script.
+
+For example:
+
+```bash
 npm start
 ```
 
-You'll be prompted for each filter category: enter comma-separated
-keywords (or leave blank to skip a category), then rate 1–10 how much it
-should matter. Example for the blasting-vs-plant-design problem you
-described:
+or:
 
-- **Major/field:** `mining engineering, geological engineering` → weight `8`
-- **Specialization:** `blasting, drill and blast` → weight `10`
-- **Company type:** `mining, metals, coal` → weight `6`
-- **Location:** `Nevada, Arizona` → weight `4`
-
-Results print as a ranked table with score, title, company, location, which
-keywords matched, and the direct apply link.
-
-## How the scoring works (`src/filters.js`)
-
-Each listing's score is:
-
-```
-score = Σ (category_weight × fraction_of_that_category's_keywords_matched)
+```bash
+node src/index.js
 ```
 
-So a listing doesn't need to match *every* keyword in a category to rank —
-partial matches count, but full matches count more. Categories left blank
-are skipped entirely. Listings matching nothing across all categories are
-dropped by default.
+depending on the project's entry point.
 
-## Project structure
+---
 
-```
-src/
-  index.js            CLI entry point — prompts, orchestration
-  filters.js           scoring/ranking logic (source-agnostic)
-  display.js           table rendering
-  sources/
-    simplify.js         SimplifyJobs dataset adapter
-```
+## Dependencies
 
-## Adding a new source (this is the important part for your mining-engineering use case)
+The CLI display currently uses:
 
-Every source module just needs one `async fetchInternships()` function
-that returns objects shaped like:
+* [`cli-table3`](https://www.npmjs.com/package/cli-table3)
+* [`chalk`](https://www.npmjs.com/package/chalk)
+* Node.js `readline`
 
-```js
-{
-  title: "...",
-  company: "...",
-  location: "...",
-  url: "...",
-  datePosted: Date | null,
-  tags: "lowercase text used for keyword matching",
-  source: "human-readable source name",
-}
+Install them with:
+
+```bash
+npm install cli-table3 chalk
 ```
 
-Then in `src/index.js`, fetch from multiple sources and merge the arrays
-before calling `rankInternships()`. Good next sources to add for
-mining-specific coverage:
+`readline` is included with Node.js and does not need to be installed separately.
 
-- **Company career-page APIs** for major mining employers (Rio Tinto,
-  Freeport-McMoRan, Barrick, Newmont, etc.) — most large companies run on
-  Workday, Greenhouse, or SmartRecruiters, all of which expose JSON
-  endpoints you can hit directly (no scraping needed).
-- **[Adzuna's job search API](https://developer.adzuna.com/)** — free tier,
-  supports keyword + category search, good general-purpose fallback.
-- **University career center feeds**, if your school's Handshake or
-  similar system exposes an export/API.
+---
 
-## Known limitations to mention in your writeup
+## Design Philosophy
 
-- Matching is currently keyword-based (`tags.includes(keyword)`), not
-  semantic — "blasting" won't match "blast design" unless you list both.
-  A logical next step is fuzzy matching or embedding-based similarity.
-- Coverage depends entirely on the underlying dataset(s); the "internships
-  never respond" and "hard to find niche roles" problems you described are
-  really data-coverage problems, which is why multi-source support is
-  built into the architecture from the start.
-=======
-# Skynet
->>>>>>> 5b481f39c47e1073eec5b40df691c1fed30bac13
+The filtering system intentionally does **not** use:
+
+* Scores
+* Weights
+* Ranking algorithms
+* Arbitrary relevance values
+
+Instead, it uses a funnel approach:
+
+```text
+Broad Search
+     ↓
+Major
+     ↓
+Company Type
+     ↓
+Location
+     ↓
+Custom Keywords
+     ↓
+Final Internship Pool
+```
+
+Each step simply removes listings that don't satisfy the selected criteria.
+
+This makes the results predictable and allows filters to be added or removed without introducing a hidden scoring system.
+
+---
+
+## Future Improvements
+
+Potential additions include:
+
+* [ ] Interactive filter editing
+* [ ] Save filter presets
+* [ ] Search history
+* [ ] Duplicate listing detection
+* [ ] More internship sources
+* [ ] Automatic application tracking
+* [ ] Saved internships
+* [ ] Configurable result limits
