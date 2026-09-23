@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Skynet — Internship Finder (CLI)
 
 A command-line tool that pulls internship listings and ranks them against
@@ -100,3 +101,6 @@ mining-specific coverage:
   never respond" and "hard to find niche roles" problems you described are
   really data-coverage problems, which is why multi-source support is
   built into the architecture from the start.
+=======
+# Skynet
+>>>>>>> 5b481f39c47e1073eec5b40df691c1fed30bac13
