@@ -1,8 +1,8 @@
 # Skynet Internship Finder
 
-A command-line internship search tool that collects internship listings and filters them through a customizable **funnel-style filtering system**.
+Authors: Colin Michael (rcolinmichael), Connor Williams (williamsconnor24), Stephen Hull (stephenhull)
 
-Instead of assigning scores or rankings, each filter progressively narrows the pool of internships. Results can then be browsed through paginated terminal output with clickable application links.
+The project is designed to help students in the search for internships. Currently Handshake is the main way for finding internships with Virginia Tech. The issue with Handshake is that it does not have search functions to help students find the exact internships they are looking for. Our group (Skynet) is setting out to make a website that will have greater features than what is currently available. We will find these features by surveying students on how they perceive the current system and what they would want to see added. Before this becomes a website we will be developing a prototype. This prototype will be a terminal based design that will emulate the options users will have with our potential service.  
 
 ## Features
 
